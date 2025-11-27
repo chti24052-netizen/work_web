@@ -1,24 +1,65 @@
+/* 全体の中央寄せ & 文章幅 */
 body {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 0 20px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
 }
 
+/* 送り主情報（右揃え） */
 .sender-column {
   text-align: right;
+  margin-bottom: 30px;
+  white-space: pre-line; /* 改行を反映 */
 }
 
+/* 日付 */
+.date {
+  margin: 20px 0;
+}
+
+/* 見出し */
 h1 {
-  font-size: 1.5em;
+  font-size: 1.6em;
+  margin-top: 40px;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 8px;
 }
 
 h2 {
   font-size: 1.3em;
+  margin-top: 30px;
+  color: #444;
 }
 
-p,ul,ol,dl,address {
+/* 本文 */
+p {
+  font-size: 1.05em;
+  margin-bottom: 18px;
+}
+
+/* 箇条書き */
+ul {
+  padding-left: 20px;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+/* 署名（名前だけ太字） */
+.signature {
+  margin-top: 40px;
+}
+
+.signature strong {
   font-size: 1.1em;
 }
 
-p, li, dd, dt, address {
-  line-height: 1.5;
+/* アドレスは少し小さめ */
+address {
+  font-style: normal;
+  margin-bottom: 20px;
 }
