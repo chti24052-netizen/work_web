@@ -1,5 +1,5 @@
 {
-  "name": "git-tutorial",
+  "name": "react-tutorial1",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,7 +11,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
   "devDependencies": {
-    "vite": "^4.4.11"
+    "@vitejs/plugin-react": "^4.3.2",
+    "vite": "^5.4.8"
   }
 }
