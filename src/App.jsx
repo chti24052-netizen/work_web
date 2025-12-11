@@ -1,47 +1,28 @@
 import React, { useState } from "react";
 
-function App() {
+export default function App() {
   const [query, setQuery] = useState("");
-  const [artistResults, setArtistResults] = useState([]);
-  const [songs, setSongs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState([]);
   const [selectedArtist, setSelectedArtist] = useState(null);
+  const [tracks, setTracks] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const ITEMS_PER_PAGE = 20;
 
-  // ページング用
-  const [page, setPage] = useState(1);
-  const songsPerPage = 20;
-
-  // ひらがな・ローマ字 → カタカナ変換
-  const toKatakana = (str) => {
-    return str
-      .replace(/[ぁ-ん]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60))
-      .replace(/([a-zA-Z]+)/g, (r) =>
-        r
-          .toLowerCase()
-          .replace(/tu/g, "ツ")
-          .replace(/zu/g, "ズ")
-      );
-  };
-
-  // アーティスト検索
-  const searchArtist = async () => {
+  const searchArtists = async () => {
     if (!query) return;
     setLoading(true);
-    setArtistResults([]);
-    setSongs([]);
     setSelectedArtist(null);
-    setPage(1);
-
-    const keyword = toKatakana(query);
+    setTracks([]);
 
     try {
       const res = await fetch(
         `https://itunes.apple.com/search?term=${encodeURIComponent(
-          keyword
-        )}&entity=musicArtist&country=jp&limit=5`
+          query
+        )}&media=music&entity=musicArtist&attribute=artistTerm&limit=25&country=jp`
       );
       const data = await res.json();
-      setArtistResults(data.results || []);
+      setResults(data.results || []);
     } catch (e) {
       console.error(e);
     }
@@ -49,49 +30,47 @@ function App() {
     setLoading(false);
   };
 
-  // アーティストの全曲取得
-  const loadAllSongs = async (artistId, artistName) => {
+  const loadTracks = async (artistName) => {
     setLoading(true);
     setSelectedArtist(artistName);
-    setPage(1);
+    setCurrentPage(1);
 
     try {
       const res = await fetch(
-        `https://itunes.apple.com/lookup?id=${artistId}&entity=song&country=jp&limit=200`
+        `https://itunes.apple.com/search?term=${encodeURIComponent(
+          artistName
+        )}&media=music&entity=song&country=jp&limit=200`
       );
       const data = await res.json();
-
-      // data.results[0] はアーティスト情報なので除外
-      const allSongs = data.results.slice(1);
-
-      setSongs(allSongs);
+      setTracks(data.results || []);
     } catch (e) {
       console.error(e);
+      setTracks([]);
     }
 
     setLoading(false);
   };
 
-  // ページング
-  const start = (page - 1) * songsPerPage;
-  const end = start + songsPerPage;
-  const paginatedSongs = songs.slice(start, end);
-  const totalPages = Math.ceil(songs.length / songsPerPage);
+  const paginatedTracks = tracks.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const totalPages = Math.ceil(tracks.length / ITEMS_PER_PAGE);
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">日本アーティスト全曲検索アプリ</h1>
+      <h1 className="text-3xl font-bold">音楽検索アプリ（日本のアーティスト対応）</h1>
 
-      {/* 検索欄 */}
       <div className="flex gap-2">
         <input
           className="border p-2 rounded w-full"
-          placeholder="アーティスト名を入力（例：ずとまよ）"
+          placeholder="例：ZUTOMAYO, 米津玄師, Aimer など"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <button
-          onClick={searchArtist}
+          onClick={searchArtists}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           検索
@@ -100,100 +79,99 @@ function App() {
 
       {loading && <p>検索中...</p>}
 
-      {/* アーティスト候補 */}
-      {!loading && artistResults.length > 0 && !selectedArtist && (
-        <div className="space-y-3">
-          <h2 className="text-xl font-bold">アーティスト候補</h2>
-          {artistResults.map((a) => (
+      {/* アーティスト候補表示 */}
+      {!loading && !selectedArtist && results.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">アーティスト候補</h2>
+          {results.map((artist) => (
             <div
-              key={a.artistId}
-              className="p-3 border rounded hover:bg-gray-100 cursor-pointer"
-              onClick={() => loadAllSongs(a.artistId, a.artistName)}
+              key={artist.artistId}
+              className="border p-3 rounded hover:bg-gray-100 cursor-pointer"
+              onClick={() => loadTracks(artist.artistName)}
             >
-              <p className="text-lg font-semibold">{a.artistName}</p>
+              {artist.artistName}
             </div>
           ))}
         </div>
       )}
 
       {/* 曲一覧 */}
-      {selectedArtist && songs.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4">
-            {selectedArtist} の曲一覧（{songs.length} 曲）
-          </h2>
+      {selectedArtist && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold">{selectedArtist} の曲一覧</h2>
 
-          {/* ページボタン（上） */}
-          <div className="flex justify-between mb-4">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="px-3 py-2 bg-gray-300 rounded disabled:opacity-50"
-            >
-              ← 前へ
-            </button>
+          {tracks.length === 0 && !loading && (
+            <p>このアーティストの曲データは見つかりませんでした。</p>
+          )}
 
-            <span className="font-semibold">
-              {page} / {totalPages}
-            </span>
-
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage(page + 1)}
-              className="px-3 py-2 bg-gray-300 rounded disabled:opacity-50"
-            >
-              次へ →
-            </button>
-          </div>
-
-          {/* 曲20件 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {paginatedSongs.map((song) => (
-              <div
-                key={song.trackId}
-                className="border p-3 rounded hover:bg-gray-100"
+          {/* ページ上部のページネーション */}
+          {tracks.length > 0 && (
+            <div className="flex justify-between items-center">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
               >
-                <img src={song.artworkUrl100} alt="art" className="rounded" />
-                <p className="font-semibold mt-2">{song.trackName}</p>
-                <p className="text-sm text-gray-600">{song.collectionName}</p>
-                <audio controls src={song.previewUrl} className="mt-2" />
+                前へ
+              </button>
+              <span>
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
+              >
+                次へ
+              </button>
+            </div>
+          )}
+
+          {/* トラック表示 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {paginatedTracks.map((track) => (
+              <div key={track.trackId} className="border p-3 rounded">
+                <img src={track.artworkUrl100} className="rounded" />
+                <p className="font-semibold mt-2">{track.trackName}</p>
+                <audio controls src={track.previewUrl} className="mt-2" />
               </div>
             ))}
           </div>
 
-          {/* ページボタン（下） */}
-          <div className="flex justify-between mt-4">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="px-3 py-2 bg-gray-300 rounded disabled:opacity-50"
-            >
-              ← 前へ
-            </button>
+          {/* ページ下部のページネーション */}
+          {tracks.length > 0 && (
+            <div className="flex justify-between items-center mt-4">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
+              >
+                前へ
+              </button>
+              <span>
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
+              >
+                次へ
+              </button>
+            </div>
+          )}
 
-            <span className="font-semibold">
-              {page} / {totalPages}
-            </span>
-
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage(page + 1)}
-              className="px-3 py-2 bg-gray-300 rounded disabled:opacity-50"
-            >
-              次へ →
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setSelectedArtist(null);
+              setTracks([]);
+            }}
+            className="mt-4 px-4 py-2 bg-gray-400 rounded"
+          >
+            ← アーティスト一覧へ戻る
+          </button>
         </div>
-      )}
-
-      {/* 曲が見つからない場合 */}
-      {selectedArtist && songs.length === 0 && !loading && (
-        <p className="text-red-500 font-semibold">
-          このアーティストの曲データは見つかりませんでした。
-        </p>
       )}
     </div>
   );
 }
-
-export default App;
