@@ -2,23 +2,57 @@ import React, { useState } from "react";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [selected, setSelected] = useState(null);
+  const [artistResults, setArtistResults] = useState([]);
+  const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedArtist, setSelectedArtist] = useState(null);
 
-  const searchMusic = async () => {
+  // ひらがな・ローマ字 → カタカナ変換
+  const toKatakana = (str) => {
+    return str
+      .replace(/([a-zA-Z]+)/g, (r) =>
+        r
+          .toLowerCase()
+          .replace(/tu/g, "ツ")
+          .replace(/zu/g, "ズ")
+      )
+      .replace(/[ぁ-ん]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+  };
+
+  const searchArtist = async () => {
     if (!query) return;
     setLoading(true);
-    setSelected(null);
+    setArtistResults([]);
+    setSongs([]);
+
+    const keyword = toKatakana(query);
 
     try {
       const res = await fetch(
         `https://itunes.apple.com/search?term=${encodeURIComponent(
-          query
-        )}&media=music&limit=20&country=jp`
+          keyword
+        )}&entity=musicArtist&country=jp&limit=5`
       );
       const data = await res.json();
-      setResults(data.results || []);
+      setArtistResults(data.results || []);
+    } catch (e) {
+      console.error(e);
+    }
+
+    setLoading(false);
+  };
+
+  // アーティストの全曲取得
+  const loadAllSongs = async (artistId, artistName) => {
+    setLoading(true);
+    setSelectedArtist(artistName);
+
+    try {
+      const res = await fetch(
+        `https://itunes.apple.com/lookup?id=${artistId}&entity=song&country=jp&limit=200`
+      );
+      const data = await res.json();
+      setSongs(data.results.slice(1));
     } catch (e) {
       console.error(e);
     }
@@ -28,18 +62,18 @@ export default function App() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">音楽検索アプリ（日本の曲限定）</h1>
+      <h1 className="text-3xl font-bold">日本アーティスト全曲検索アプリ</h1>
 
       {/* 検索欄 */}
       <div className="flex gap-2">
         <input
           className="border p-2 rounded w-full"
-          placeholder="例：ずっと真夜中でいいのに"
+          placeholder="アーティスト名を入力（例：ずとまよ）"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <button
-          onClick={searchMusic}
+          onClick={searchArtist}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           検索
@@ -48,43 +82,43 @@ export default function App() {
 
       {loading && <p>検索中...</p>}
 
-      {/* 詳細 */}
-      {selected && (
-        <div className="p-4 border rounded-lg shadow">
-          <h2 className="text-xl font-semibold">詳細</h2>
-          <img
-            src={selected.artworkUrl100}
-            alt="art"
-            className="rounded my-2"
-          />
-          <p>曲名：{selected.trackName}</p>
-          <p>アーティスト：{selected.artistName}</p>
-          <p>アルバム：{selected.collectionName}</p>
-          <audio controls src={selected.previewUrl} className="mt-2" />
-
-          <button
-            className="mt-3 px-3 py-2 bg-gray-300 rounded"
-            onClick={() => setSelected(null)}
-          >
-            戻る
-          </button>
+      {/* アーティスト候補 */}
+      {!loading && artistResults.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xl font-bold">アーティスト候補</h2>
+          {artistResults.map((a) => (
+            <div
+              key={a.artistId}
+              className="p-3 border rounded hover:bg-gray-100 cursor-pointer"
+              onClick={() => loadAllSongs(a.artistId, a.artistName)}
+            >
+              <p className="text-lg font-semibold">{a.artistName}</p>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* 検索結果 */}
-      {!selected && !loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {results.map((item) => (
-            <div
-              key={item.trackId}
-              className="border rounded-lg p-3 hover:bg-gray-100 cursor-pointer"
-              onClick={() => setSelected(item)}
-            >
-              <img src={item.artworkUrl100} alt="art" className="rounded" />
-              <p className="font-semibold mt-2">{item.trackName}</p>
-              <p className="text-sm text-gray-600">{item.artistName}</p>
-            </div>
-          ))}
+      {/* 曲一覧 */}
+      {selectedArtist && songs.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold mb-4">{selectedArtist} の曲一覧</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {songs.map((song) => (
+              <div
+                key={song.trackId}
+                className="border p-3 rounded hover:bg-gray-100"
+              >
+                <img
+                  src={song.artworkUrl100}
+                  alt="art"
+                  className="rounded"
+                />
+                <p className="font-semibold mt-2">{song.trackName}</p>
+                <p className="text-sm text-gray-600">{song.collectionName}</p>
+                <audio controls src={song.previewUrl} className="mt-2" />
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
