@@ -7,16 +7,11 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState(null);
 
-  // ひらがな・ローマ字 → カタカナ変換
+  // ひらがな → カタカナ変換（安全版）
   const toKatakana = (str) => {
-    return str
-      .replace(/([a-zA-Z]+)/g, (r) =>
-        r
-          .toLowerCase()
-          .replace(/tu/g, "ツ")
-          .replace(/zu/g, "ズ")
-      )
-      .replace(/[ぁ-ん]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+    return str.replace(/[ぁ-ん]/g, (ch) =>
+      String.fromCharCode(ch.charCodeAt(0) + 0x60)
+    );
   };
 
   const searchArtist = async () => {
@@ -31,7 +26,7 @@ export default function App() {
       const res = await fetch(
         `https://itunes.apple.com/search?term=${encodeURIComponent(
           keyword
-        )}&entity=musicArtist&country=jp&limit=5`
+        )}&entity=musicArtist&country=jp&limit=10`
       );
       const data = await res.json();
       setArtistResults(data.results || []);
@@ -52,7 +47,7 @@ export default function App() {
         `https://itunes.apple.com/lookup?id=${artistId}&entity=song&country=jp&limit=200`
       );
       const data = await res.json();
-      setSongs(data.results.slice(1));
+      setSongs(data.results.slice(1)); // 0番目はアーティスト情報なので切る
     } catch (e) {
       console.error(e);
     }
@@ -68,7 +63,7 @@ export default function App() {
       <div className="flex gap-2">
         <input
           className="border p-2 rounded w-full"
-          placeholder="アーティスト名を入力（例：ずとまよ）"
+          placeholder="アーティスト名（例：ずっと真夜中でいいのに）"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
