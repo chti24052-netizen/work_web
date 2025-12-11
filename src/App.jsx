@@ -7,6 +7,10 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState(null);
 
+  // ページネーション用
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20; // 1ページ20曲
+
   // ひらがな → カタカナ変換
   const toKatakana = (str) =>
     str.replace(/[ぁ-ん]/g, (ch) =>
@@ -20,6 +24,7 @@ export default function App() {
     setArtistResults([]);
     setSongs([]);
     setSelectedArtist(null);
+    setCurrentPage(1);
 
     const keyword = toKatakana(query);
 
@@ -38,11 +43,12 @@ export default function App() {
     setLoading(false);
   };
 
-  // アーティスト名から曲検索（これが正しい方法）
+  // 曲取得（artistNameで検索）
   const loadAllSongs = async (artistName) => {
     setLoading(true);
     setSongs([]);
     setSelectedArtist(artistName);
+    setCurrentPage(1);
 
     try {
       const res = await fetch(
@@ -58,6 +64,14 @@ export default function App() {
 
     setLoading(false);
   };
+
+  // ページに応じた曲リストを返す
+  const paginatedSongs = songs.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const totalPages = Math.ceil(songs.length / pageSize);
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -89,6 +103,7 @@ export default function App() {
           onClick={() => {
             setSelectedArtist(null);
             setSongs([]);
+            setCurrentPage(1);
           }}
           className="px-3 py-2 bg-gray-300 rounded"
         >
@@ -116,17 +131,19 @@ export default function App() {
       {selectedArtist && (
         <div>
           <h2 className="text-2xl font-bold mb-4">
-            {selectedArtist} の曲一覧
+            {selectedArtist} の曲一覧（全 {songs.length} 曲）
           </h2>
 
+          {/* 曲が0件 */}
           {songs.length === 0 && !loading && (
             <p className="text-red-500">
               このアーティストの曲データは見つかりませんでした。
             </p>
           )}
 
+          {/* 曲リスト（1ページ分） */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {songs.map((song) => (
+            {paginatedSongs.map((song) => (
               <div
                 key={song.trackId}
                 className="border p-3 rounded hover:bg-gray-100"
@@ -138,6 +155,39 @@ export default function App() {
               </div>
             ))}
           </div>
+
+          {/* ページネーション */}
+          {songs.length > pageSize && (
+            <div className="flex justify-center items-center gap-3 mt-4">
+              <button
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className={`px-3 py-2 rounded ${
+                  currentPage <= 1
+                    ? "bg-gray-300"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
+              >
+                ← 前へ
+              </button>
+
+              <span>
+                {currentPage} / {totalPages} ページ
+              </span>
+
+              <button
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className={`px-3 py-2 rounded ${
+                  currentPage >= totalPages
+                    ? "bg-gray-300"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
+              >
+                次へ →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
