@@ -1,9 +1,8 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  the [results, setResults] = useState([]);
+  const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -29,13 +28,13 @@ export default function App() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">音楽検索アプリ（日本限定）</h1>
+      <h1 className="text-3xl font-bold">音楽検索アプリ（日本の曲限定）</h1>
 
       {/* 検索欄 */}
       <div className="flex gap-2">
         <input
           className="border p-2 rounded w-full"
-          placeholder="曲名・アーティスト名（例：ずっと真夜中でいいのに）"
+          placeholder="例：ずっと真夜中でいいのに"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -49,7 +48,7 @@ export default function App() {
 
       {loading && <p>検索中...</p>}
 
-      {/* 詳細表示 */}
+      {/* 詳細 */}
       {selected && (
         <div className="p-4 border rounded-lg shadow">
           <h2 className="text-xl font-semibold">詳細</h2>
@@ -62,6 +61,7 @@ export default function App() {
           <p>アーティスト：{selected.artistName}</p>
           <p>アルバム：{selected.collectionName}</p>
           <audio controls src={selected.previewUrl} className="mt-2" />
+
           <button
             className="mt-3 px-3 py-2 bg-gray-300 rounded"
             onClick={() => setSelected(null)}
@@ -71,7 +71,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 検索結果リスト */}
+      {/* 検索結果 */}
       {!selected && !loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {results.map((item) => (
