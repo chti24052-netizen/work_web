@@ -11,17 +11,19 @@ export default function App() {
     if (!query) return;
     setLoading(true);
     setSelected(null);
+
     try {
       const res = await fetch(
         `https://itunes.apple.com/search?term=${encodeURIComponent(
           query
-        )}&entity=song&limit=20`
+        )}&media=music&limit=20`
       );
       const data = await res.json();
       setResults(data.results || []);
     } catch (e) {
       console.error(e);
     }
+
     setLoading(false);
   };
 
@@ -78,11 +80,7 @@ export default function App() {
               className="border rounded-lg p-3 hover:bg-gray-100 cursor-pointer"
               onClick={() => setSelected(item)}
             >
-              <img
-                src={item.artworkUrl100}
-                alt="art"
-                className="rounded"
-              />
+              <img src={item.artworkUrl100} alt="art" className="rounded" />
               <p className="font-semibold mt-2">{item.trackName}</p>
               <p className="text-sm text-gray-600">{item.artistName}</p>
             </div>
