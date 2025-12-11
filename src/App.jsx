@@ -3,7 +3,7 @@ import { useState } from "react";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
+  the [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +16,7 @@ export default function App() {
       const res = await fetch(
         `https://itunes.apple.com/search?term=${encodeURIComponent(
           query
-        )}&media=music&limit=20`
+        )}&media=music&limit=20&country=jp`
       );
       const data = await res.json();
       setResults(data.results || []);
@@ -29,13 +29,13 @@ export default function App() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">音楽検索アプリ（ZUTOMAYO対応）</h1>
+      <h1 className="text-3xl font-bold">音楽検索アプリ（日本限定）</h1>
 
       {/* 検索欄 */}
       <div className="flex gap-2">
         <input
           className="border p-2 rounded w-full"
-          placeholder="曲名・アーティスト名を入力（例：ずっと真夜中でいいのに）"
+          placeholder="曲名・アーティスト名（例：ずっと真夜中でいいのに）"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
